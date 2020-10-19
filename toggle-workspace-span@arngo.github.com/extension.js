@@ -70,7 +70,7 @@ function init () {
 
 function enable () {
     button = new ToggleButton();
-    Main.panel.addToStatusArea(Me.metadata.name, button, 99, 'right');
+    Main.panel.addToStatusArea(Me.metadata.name, button);
 }
 
 function disable () {
