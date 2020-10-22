@@ -34,8 +34,8 @@ var ToggleButton = class ToggleButton extends PanelMenu.Button {
         super._init(0.0, `${Me.metadata.name} Indicator`, false);
         this.icon = new St.Icon({style_class: "system-status-icon"});
         this.updateIcon();
-        this.actor.add_child(this.icon);
-        this._onPressEventId = this.actor.connect('button-press-event', this.pressAction.bind(this));
+        this.add_child(this.icon);
+        this._onPressEventId = this.connect('button-press-event', this.pressAction.bind(this));
         this._onSettingChangedId = mutterSettings.connect('changed::workspaces-only-on-primary', this.updateIcon.bind(this));
     }
 
@@ -49,8 +49,8 @@ var ToggleButton = class ToggleButton extends PanelMenu.Button {
     }
 
     destroy() {
-        this.actor.disconnect(this._onPressEventId);
-        this.actor.disconnect(this._onSettingChangedId);
+        this.disconnect(this._onPressEventId);
+        this.disconnect(this._onSettingChangedId);
         super.destroy();
     }
 }
