@@ -46,6 +46,7 @@ var ToggleButton = class ToggleButton extends PanelMenu.Button {
     pressAction() {
         let current = mutterSettings.get_boolean('workspaces-only-on-primary');
         mutterSettings.set_boolean('workspaces-only-on-primary', !current);
+        Main.overview.hide();
     }
 
     destroy() {
