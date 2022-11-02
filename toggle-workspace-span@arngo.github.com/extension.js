@@ -11,6 +11,9 @@ const PanelMenu = imports.ui.panelMenu;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
+const QuickSettings = imports.ui.quickSettings;
+const QuickSettingsMenu = imports.ui.main.panel.statusArea.quickSettings;
+
 let mutterSettings = null;
 try {
     mutterSettings = ExtensionUtils.getSettings('org.gnome.mutter');
@@ -45,7 +48,6 @@ var ToggleButton = GObject.registerClass(
         pressAction() {
             let current = mutterSettings.get_boolean('workspaces-only-on-primary');
             mutterSettings.set_boolean('workspaces-only-on-primary', !current);
-            Main.overview.hide();
         }
 
         destroy() {
@@ -56,19 +58,72 @@ var ToggleButton = GObject.registerClass(
     }
 );
 
-var button = null;
+const FeatureToggle = GObject.registerClass(
+class FeatureToggle extends QuickSettings.QuickToggle {
+    _init() {
+        super._init({
+            label: 'Workspaces',
+            gicon: Gio.icon_new_for_string(Me.path + '/icons/workspace-span-on-symbolic.svg'),
+            toggleMode: true,
+        });
+
+        mutterSettings.bind('workspaces-only-on-primary',
+            this, 'checked',
+            Gio.SettingsBindFlags.INVERT_BOOLEAN);
+
+        this._settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.toggle-workspace-span');
+
+        this._settings.bind('show-in-quicksettings',
+            this, 'visible',
+            Gio.SettingsBindFlags.DEFAULT);
+    }
+});
+
+const FeatureIndicator = GObject.registerClass(
+class FeatureIndicator extends QuickSettings.SystemIndicator {
+    _init() {
+        super._init();
+
+        this.quickSettingsItems.push(new FeatureToggle());
+        
+        this.connect('destroy', () => {
+            this.quickSettingsItems.forEach(item => item.destroy());
+        });
+        
+        QuickSettingsMenu._addItems(this.quickSettingsItems);
+    }
+});
+
+class Extension {
+    constructor() {
+        this._indicator = null;
+        this._panelButton = null;
+    }
+    
+    enable() {
+        this.settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.toggle-workspace-span');
+
+        this._indicator = new FeatureIndicator();
+        this._panelButton = new ToggleButton();
+
+        this.settings.bind(
+            'show-in-quicksettings',
+            this._panelButton,
+            'visible',
+            Gio.SettingsBindFlags.INVERT_BOOLEAN
+        );
+
+        Main.panel.addToStatusArea(Me.metadata.name, this._panelButton);
+    }
+    
+    disable() {
+        this._indicator.destroy();
+        this._indicator = null;
+        this._panelButton.destroy();
+        this._panelButton = null;
+    }
+}
 
 function init () {
-}
-
-function enable () {
-    button = new ToggleButton();
-    Main.panel.addToStatusArea(Me.metadata.name, button);
-}
-
-function disable () {
-    if (button !== null) {
-        button.destroy();
-        button = null;
-    }
+    return new Extension();
 }
