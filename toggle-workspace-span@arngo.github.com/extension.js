@@ -14,13 +14,6 @@ const Me = ExtensionUtils.getCurrentExtension();
 const QuickSettings = imports.ui.quickSettings;
 const QuickSettingsMenu = imports.ui.main.panel.statusArea.quickSettings;
 
-let mutterSettings = null;
-try {
-    mutterSettings = ExtensionUtils.getSettings('org.gnome.mutter');
-} catch (e) {
-    logError(e, 'Failed to load Mutter settings');
-}
-
 var ToggleButton = GObject.registerClass(
     {GTypeName: 'ToggleButton'},
     class ToggleButton extends PanelMenu.Button {
@@ -35,19 +28,20 @@ var ToggleButton = GObject.registerClass(
         _init() {
             super._init(0.0, `${Me.metadata.name} Indicator`, false);
             this.icon = new St.Icon({style_class: "system-status-icon"});
-            this.updateIcon();
             this.add_child(this.icon);
+            this.mutterSettings = ExtensionUtils.getSettings('org.gnome.mutter');
             this._onPressEventId = this.connect('button-press-event', this.pressAction.bind(this));
-            this._onSettingChangedId = mutterSettings.connect('changed::workspaces-only-on-primary', this.updateIcon.bind(this));
+            this._onSettingChangedId = this.mutterSettings.connect('changed::workspaces-only-on-primary', this.updateIcon.bind(this));
+            this.updateIcon();
         }
 
         updateIcon() {
-            this.icon.gicon = this.getIcon(mutterSettings.get_boolean('workspaces-only-on-primary'));
+            this.icon.gicon = this.getIcon(this.mutterSettings.get_boolean('workspaces-only-on-primary'));
         }
 
         pressAction() {
-            let current = mutterSettings.get_boolean('workspaces-only-on-primary');
-            mutterSettings.set_boolean('workspaces-only-on-primary', !current);
+            let current = this.mutterSettings.get_boolean('workspaces-only-on-primary');
+            this.mutterSettings.set_boolean('workspaces-only-on-primary', !current);
         }
 
         destroy() {
@@ -67,7 +61,9 @@ class FeatureToggle extends QuickSettings.QuickToggle {
             toggleMode: true,
         });
 
-        mutterSettings.bind('workspaces-only-on-primary',
+        this.mutterSettings = ExtensionUtils.getSettings('org.gnome.mutter');
+
+        this.mutterSettings.bind('workspaces-only-on-primary',
             this, 'checked',
             Gio.SettingsBindFlags.INVERT_BOOLEAN);
 
