@@ -33,6 +33,13 @@ var ToggleButton = GObject.registerClass(
             this._onPressEventId = this.connect('button-press-event', this.pressAction.bind(this));
             this._onSettingChangedId = this.mutterSettings.connect('changed::workspaces-only-on-primary', this.updateIcon.bind(this));
             this.updateIcon();
+
+            this.settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.toggle-workspace-span');
+            this.settings.bind(
+                'show-in-quicksettings',
+                this, 'visible',
+                Gio.SettingsBindFlags.INVERT_BOOLEAN
+            );
         }
 
         updateIcon() {
@@ -97,17 +104,8 @@ class Extension {
     }
     
     enable() {
-        this.settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.toggle-workspace-span');
-
         this._indicator = new FeatureIndicator();
         this._panelButton = new ToggleButton();
-
-        this.settings.bind(
-            'show-in-quicksettings',
-            this._panelButton,
-            'visible',
-            Gio.SettingsBindFlags.INVERT_BOOLEAN
-        );
 
         Main.panel.addToStatusArea(Me.metadata.name, this._panelButton);
     }
