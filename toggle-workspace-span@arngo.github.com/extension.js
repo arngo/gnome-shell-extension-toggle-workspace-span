@@ -53,7 +53,7 @@ var ToggleButton = GObject.registerClass(
 
         destroy() {
             this.disconnect(this._onPressEventId);
-            this.disconnect(this._onSettingChangedId);
+            this.mutterSettings.disconnect(this._onSettingChangedId);
             super.destroy();
         }
     }
