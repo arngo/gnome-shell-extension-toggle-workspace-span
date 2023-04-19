@@ -63,7 +63,7 @@ const FeatureToggle = GObject.registerClass(
 class FeatureToggle extends QuickSettings.QuickToggle {
     _init() {
         super._init({
-            label: 'Workspaces',
+            title: 'Workspaces',
             gicon: Gio.icon_new_for_string(Me.path + '/icons/workspace-span-on-symbolic.svg'),
             toggleMode: true,
         });
