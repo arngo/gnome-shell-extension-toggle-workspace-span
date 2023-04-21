@@ -94,6 +94,10 @@ class FeatureIndicator extends QuickSettings.SystemIndicator {
         });
         
         QuickSettingsMenu._addItems(this.quickSettingsItems);
+
+        for (const item of this.quickSettingsItems) {
+            QuickSettingsMenu.menu._grid.set_child_below_sibling(item, QuickSettingsMenu._backgroundApps.quickSettingsItems[0]);
+        }
     }
 });
 
