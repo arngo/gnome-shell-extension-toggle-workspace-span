@@ -10,7 +10,7 @@ GNOME Shell extension to show a button on the panel or quick settings menu which
 
 ## Installation
 
-- This extension supports GNOME Shell version 43
+- This extension supports GNOME Shell version 44
 
 **From GNOME Extensions Website**
 
