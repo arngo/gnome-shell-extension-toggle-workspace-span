@@ -63,7 +63,7 @@ const FeatureToggle = GObject.registerClass(
 class FeatureToggle extends QuickSettings.QuickToggle {
     _init() {
         super._init({
-            label: 'Workspaces',
+            title: 'Workspaces',
             gicon: Gio.icon_new_for_string(Me.path + '/icons/workspace-span-on-symbolic.svg'),
             toggleMode: true,
         });
@@ -94,6 +94,10 @@ class FeatureIndicator extends QuickSettings.SystemIndicator {
         });
         
         QuickSettingsMenu._addItems(this.quickSettingsItems);
+
+        for (const item of this.quickSettingsItems) {
+            QuickSettingsMenu.menu._grid.set_child_below_sibling(item, QuickSettingsMenu._backgroundApps.quickSettingsItems[0]);
+        }
     }
 });
 

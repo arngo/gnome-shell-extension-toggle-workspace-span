@@ -2,9 +2,9 @@
   "description": "Toggle workspaces spanning displays.", 
   "name": "Toggle workspace span", 
   "shell-version": [
-    "43"
+    "44"
   ], 
   "url": "https://github.com/arngo/gnome-shell-extension-toggle-workspace-span", 
   "uuid": "toggle-workspace-span@arngo.github.com", 
-  "version": 3
+  "version": 4
 }
