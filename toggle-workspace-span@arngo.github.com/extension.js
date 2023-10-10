@@ -62,12 +62,19 @@ const FeatureToggle = GObject.registerClass(
             extensionObject._mutterSettings.bind('workspaces-only-on-primary',
                 this, 'checked',
                 Gio.SettingsBindFlags.INVERT_BOOLEAN);
+            this._onSettingChangedId = extensionObject._mutterSettings.connect('changed::workspaces-only-on-primary', this.updateSubtitle.bind(this));
+            this.updateSubtitle();
 
             this._settings = extensionObject.getSettings();
 
             this._settings.bind('show-in-quicksettings',
                 this, 'visible',
                 Gio.SettingsBindFlags.DEFAULT);
+        }
+
+        updateSubtitle() {
+            let state = this._mutterSettings.get_boolean('workspaces-only-on-primary');
+            this.subtitle = state ? 'Only on primary' : 'Span displays';
         }
     });
 
