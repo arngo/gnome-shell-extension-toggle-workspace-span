@@ -10,21 +10,13 @@ import {Button as PanelButton} from 'resource:///org/gnome/shell/ui/panelMenu.js
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
-
 var ToggleButton = GObject.registerClass(
     {GTypeName: 'ToggleButton'},
     class ToggleButton extends PanelButton {
-        getIcon(state) {
-            if (state) {
-                return Gio.icon_new_for_string(this._extensionPath + '/icons/workspace-span-off-symbolic.svg');
-            } else {
-                return Gio.icon_new_for_string(this._extensionPath + '/icons/workspace-span-on-symbolic.svg');
-            }
-        }
-
         _init(extensionObject) {
             super._init(0.0, `${extensionObject.metadata.name} Indicator`, false);
-            this._extensionPath = extensionObject.path;
+            this._mutterSettings = extensionObject._mutterSettings;
+            this._icons = extensionObject._icons;
             this.icon = new St.Icon({style_class: "system-status-icon"});
             this.add_child(this.icon);
             this._onPressEventId = this.connect('button-press-event', this.pressAction.bind(this));
@@ -40,17 +32,18 @@ var ToggleButton = GObject.registerClass(
         }
 
         updateIcon() {
-            this.icon.gicon = this.getIcon(extensionObject._mutterSettings.get_boolean('workspaces-only-on-primary'));
+            let state = this._mutterSettings.get_boolean('workspaces-only-on-primary');
+            this.icon.gicon = this._icons[state];
         }
 
         pressAction() {
-            let current = extensionObject._mutterSettings.get_boolean('workspaces-only-on-primary');
-            extensionObject._mutterSettings.set_boolean('workspaces-only-on-primary', !current);
+            let current = this._mutterSettings.get_boolean('workspaces-only-on-primary');
+            this._mutterSettings.set_boolean('workspaces-only-on-primary', !current);
         }
 
         destroy() {
             this.disconnect(this._onPressEventId);
-            extensionObject._mutterSettings.disconnect(this._onSettingChangedId);
+            this._mutterSettings.disconnect(this._onSettingChangedId);
             super.destroy();
         }
     }
@@ -65,6 +58,7 @@ const FeatureToggle = GObject.registerClass(
                 toggleMode: true,
             });
 
+            this._mutterSettings = extensionObject._mutterSettings;
             extensionObject._mutterSettings.bind('workspaces-only-on-primary',
                 this, 'checked',
                 Gio.SettingsBindFlags.INVERT_BOOLEAN);
@@ -95,6 +89,10 @@ export default class MyExtension extends Extension {
         this._mutterSettings = new Gio.Settings({
             schema_id: 'org.gnome.mutter',
         });
+        this._icons = {
+            'true': Gio.icon_new_for_string(this.path + '/icons/workspace-span-off-symbolic.svg'),
+            'false': Gio.icon_new_for_string(this.path + '/icons/workspace-span-on-symbolic.svg')
+        }
         this._indicator = new FeatureIndicator(this);
         this._panelButton = new ToggleButton(this);
         Panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
