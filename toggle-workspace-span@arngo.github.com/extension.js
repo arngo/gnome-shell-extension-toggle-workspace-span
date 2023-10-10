@@ -10,8 +10,7 @@ import {Button as PanelButton} from 'resource:///org/gnome/shell/ui/panelMenu.js
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
-var ToggleButton = GObject.registerClass(
-    {GTypeName: 'ToggleButton'},
+const ToggleButton = GObject.registerClass(
     class ToggleButton extends PanelButton {
         _init(extensionObject) {
             super._init(0.0, `${extensionObject.metadata.name} Indicator`, false);
@@ -76,18 +75,10 @@ const FeatureToggle = GObject.registerClass(
             let state = this._mutterSettings.get_boolean('workspaces-only-on-primary');
             this.subtitle = state ? 'Only on primary' : 'Span displays';
         }
-    });
 
-const FeatureIndicator = GObject.registerClass(
-    class FeatureIndicator extends QuickSettings.SystemIndicator {
-        _init(extensionObject) {
-            super._init();
-
-            this.quickSettingsItems.push(new FeatureToggle(extensionObject));
-
-            this.connect('destroy', () => {
-                this.quickSettingsItems.forEach(item => item.destroy());
-            });
+        destroy() {
+            this._mutterSettings.disconnect(this._onSettingChangedId);
+            super.destroy();
         }
     });
 
@@ -100,16 +91,20 @@ export default class MyExtension extends Extension {
             'true': Gio.icon_new_for_string(this.path + '/icons/workspace-span-off-symbolic.svg'),
             'false': Gio.icon_new_for_string(this.path + '/icons/workspace-span-on-symbolic.svg')
         }
-        this._indicator = new FeatureIndicator(this);
+        this._indicator = new QuickSettings.SystemIndicator();
+        this._indicator.quickSettingsItems.push(new FeatureToggle(this));
         this._panelButton = new ToggleButton(this);
         Panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
         Panel.addToStatusArea(this.metadata.name, this._panelButton);
     }
 
     disable() {
+        this._indicator.quickSettingsItems.forEach(item => item.destroy());
         this._indicator.destroy();
         this._indicator = null;
         this._panelButton.destroy();
         this._panelButton = null;
+        this._mutterSettings = null;
+        this._icons = null;
     }
 }
