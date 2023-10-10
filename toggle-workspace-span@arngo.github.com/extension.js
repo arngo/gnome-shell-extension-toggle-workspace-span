@@ -1,41 +1,38 @@
 'use strict';
 
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const St = imports.gi.St;
+import Gio from 'gi://Gio'
+import GLib from 'gi://GLib'
+import GObject from 'gi://GObject'
+import St from 'gi://St'
 
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
+import {panel as Panel} from 'resource:///org/gnome/shell/ui/main.js';
+import {Button as PanelButton} from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
-const QuickSettings = imports.ui.quickSettings;
-const QuickSettingsMenu = imports.ui.main.panel.statusArea.quickSettings;
 
 var ToggleButton = GObject.registerClass(
     {GTypeName: 'ToggleButton'},
-    class ToggleButton extends PanelMenu.Button {
+    class ToggleButton extends PanelButton {
         getIcon(state) {
             if (state) {
-                return Gio.icon_new_for_string(Me.path + '/icons/workspace-span-off-symbolic.svg');
+                return Gio.icon_new_for_string(this._extensionPath + '/icons/workspace-span-off-symbolic.svg');
             } else {
-                return Gio.icon_new_for_string(Me.path + '/icons/workspace-span-on-symbolic.svg');
+                return Gio.icon_new_for_string(this._extensionPath + '/icons/workspace-span-on-symbolic.svg');
             }
         }
 
-        _init() {
-            super._init(0.0, `${Me.metadata.name} Indicator`, false);
+        _init(extensionObject) {
+            super._init(0.0, `${extensionObject.metadata.name} Indicator`, false);
+            this._extensionPath = extensionObject.path;
             this.icon = new St.Icon({style_class: "system-status-icon"});
             this.add_child(this.icon);
-            this.mutterSettings = ExtensionUtils.getSettings('org.gnome.mutter');
             this._onPressEventId = this.connect('button-press-event', this.pressAction.bind(this));
-            this._onSettingChangedId = this.mutterSettings.connect('changed::workspaces-only-on-primary', this.updateIcon.bind(this));
+            this._onSettingChangedId = extensionObject._mutterSettings.connect('changed::workspaces-only-on-primary', this.updateIcon.bind(this));
             this.updateIcon();
 
-            this.settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.toggle-workspace-span');
-            this.settings.bind(
+            this._settings = extensionObject.getSettings();
+            this._settings.bind(
                 'show-in-quicksettings',
                 this, 'visible',
                 Gio.SettingsBindFlags.INVERT_BOOLEAN
@@ -43,85 +40,71 @@ var ToggleButton = GObject.registerClass(
         }
 
         updateIcon() {
-            this.icon.gicon = this.getIcon(this.mutterSettings.get_boolean('workspaces-only-on-primary'));
+            this.icon.gicon = this.getIcon(extensionObject._mutterSettings.get_boolean('workspaces-only-on-primary'));
         }
 
         pressAction() {
-            let current = this.mutterSettings.get_boolean('workspaces-only-on-primary');
-            this.mutterSettings.set_boolean('workspaces-only-on-primary', !current);
+            let current = extensionObject._mutterSettings.get_boolean('workspaces-only-on-primary');
+            extensionObject._mutterSettings.set_boolean('workspaces-only-on-primary', !current);
         }
 
         destroy() {
             this.disconnect(this._onPressEventId);
-            this.mutterSettings.disconnect(this._onSettingChangedId);
+            extensionObject._mutterSettings.disconnect(this._onSettingChangedId);
             super.destroy();
         }
     }
 );
 
 const FeatureToggle = GObject.registerClass(
-class FeatureToggle extends QuickSettings.QuickToggle {
-    _init() {
-        super._init({
-            title: 'Workspaces',
-            gicon: Gio.icon_new_for_string(Me.path + '/icons/workspace-span-on-symbolic.svg'),
-            toggleMode: true,
-        });
+    class FeatureToggle extends QuickSettings.QuickToggle {
+        _init(extensionObject) {
+            super._init({
+                title: 'Workspaces',
+                gicon: Gio.icon_new_for_string(extensionObject.path + '/icons/workspace-span-on-symbolic.svg'),
+                toggleMode: true,
+            });
 
-        this.mutterSettings = ExtensionUtils.getSettings('org.gnome.mutter');
+            extensionObject._mutterSettings.bind('workspaces-only-on-primary',
+                this, 'checked',
+                Gio.SettingsBindFlags.INVERT_BOOLEAN);
 
-        this.mutterSettings.bind('workspaces-only-on-primary',
-            this, 'checked',
-            Gio.SettingsBindFlags.INVERT_BOOLEAN);
+            this._settings = extensionObject.getSettings();
 
-        this._settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.toggle-workspace-span');
-
-        this._settings.bind('show-in-quicksettings',
-            this, 'visible',
-            Gio.SettingsBindFlags.DEFAULT);
-    }
-});
+            this._settings.bind('show-in-quicksettings',
+                this, 'visible',
+                Gio.SettingsBindFlags.DEFAULT);
+        }
+    });
 
 const FeatureIndicator = GObject.registerClass(
-class FeatureIndicator extends QuickSettings.SystemIndicator {
-    _init() {
-        super._init();
+    class FeatureIndicator extends QuickSettings.SystemIndicator {
+        _init(extensionObject) {
+            super._init();
 
-        this.quickSettingsItems.push(new FeatureToggle());
-        
-        this.connect('destroy', () => {
-            this.quickSettingsItems.forEach(item => item.destroy());
-        });
-        
-        QuickSettingsMenu._addItems(this.quickSettingsItems);
+            this.quickSettingsItems.push(new FeatureToggle(extensionObject));
 
-        for (const item of this.quickSettingsItems) {
-            QuickSettingsMenu.menu._grid.set_child_below_sibling(item, QuickSettingsMenu._backgroundApps.quickSettingsItems[0]);
+            this.connect('destroy', () => {
+                this.quickSettingsItems.forEach(item => item.destroy());
+            });
         }
-    }
-});
+    });
 
-class Extension {
-    constructor() {
-        this._indicator = null;
-        this._panelButton = null;
-    }
-    
+export default class MyExtension extends Extension {
     enable() {
-        this._indicator = new FeatureIndicator();
-        this._panelButton = new ToggleButton();
-
-        Main.panel.addToStatusArea(Me.metadata.name, this._panelButton);
+        this._mutterSettings = new Gio.Settings({
+            schema_id: 'org.gnome.mutter',
+        });
+        this._indicator = new FeatureIndicator(this);
+        this._panelButton = new ToggleButton(this);
+        Panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
+        Panel.addToStatusArea(this.metadata.name, this._panelButton);
     }
-    
+
     disable() {
         this._indicator.destroy();
         this._indicator = null;
         this._panelButton.destroy();
         this._panelButton = null;
     }
-}
-
-function init () {
-    return new Extension();
 }
