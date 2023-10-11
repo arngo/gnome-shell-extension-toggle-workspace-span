@@ -2,44 +2,30 @@
 
 'use strict';
 
-const { Adw, Gio, Gtk } = imports.gi;
+import Adw from 'gi://Adw';
+import Gio from 'gi://Gio';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+export default class MyExtensionPreferences extends ExtensionPreferences {
+    fillPreferencesWindow(window) {
+        const page = new Adw.PreferencesPage();
+        window.add(page);
+        const group = new Adw.PreferencesGroup();
+        page.add(group);
+        const row = new Adw.SwitchRow({
+            title: 'Show toggle in quick settings',
+            subtitle: 'Disable to show toggle button on panel'
+        });
+        group.add(row);
 
-function init() {
-}
+        window._settings = this.getSettings();
+        window._settings.bind(
+            'show-in-quicksettings',
+            row,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
 
-function fillPreferencesWindow(window) {
-    // Use the same GSettings schema as in `extension.js`
-    const settings = ExtensionUtils.getSettings(
-        'org.gnome.shell.extensions.toggle-workspace-span');
-    
-    // Create a preferences page and group
-    const page = new Adw.PreferencesPage();
-    const group = new Adw.PreferencesGroup();
-    page.add(group);
-
-    // Create a new preferences row
-    const row = new Adw.ActionRow({ title: 'Show toggle in quick settings (disable to show on panel)' });
-    group.add(row);
-
-    const toggle = new Gtk.Switch({
-        active: settings.get_boolean ('show-in-quicksettings'),
-        valign: Gtk.Align.CENTER,
-    });
-    settings.bind(
-        'show-in-quicksettings',
-        toggle,
-        'active',
-        Gio.SettingsBindFlags.DEFAULT
-    );
-
-    // Add the switch to the row
-    row.add_suffix(toggle);
-    row.activatable_widget = toggle;
-
-    // Add our page to the window
-    window.add(page);
+    }
 }

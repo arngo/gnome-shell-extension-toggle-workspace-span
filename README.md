@@ -1,16 +1,16 @@
 # Toggle workspace span
 
-GNOME Shell extension to show a button on the panel or quick settings menu which toggles between the settings "Workspaces only on primary display only" and "Workspaces span displays".
+GNOME Shell extension to show a button on the panel or quick settings menu which toggles between the settings "Workspaces on primary display only" and "Workspaces span displays".
 
 ## Screenshots
 
-![Quick settings screenshot](screenshots/screenshot_quicksettings.png)
+![Quick settings screenshot (on)](screenshots/screenshot_quicksettings_on.png) ![Quick settings screenshot (off)](screenshots/screenshot_quicksettings_off.png)
 
 ![Panel button screenshot](screenshots/screenshot_panel.png)
 
 ## Installation
 
-- This extension supports GNOME Shell version 44
+- This extension supports GNOME Shell version 45. See other branches for older GNOME Shell versions.
 
 **From GNOME Extensions Website**
 
