@@ -10,7 +10,7 @@ GNOME Shell extension to show a button on the panel or quick settings menu which
 
 ## Installation
 
-- This extension supports GNOME Shell version 45. See other branches for older GNOME Shell versions.
+- This extension supports GNOME Shell versions 45-46. See other branches for older GNOME Shell versions.
 
 **From GNOME Extensions Website**
 
